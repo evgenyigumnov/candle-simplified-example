@@ -1,6 +1,5 @@
 # candle-simplified-example
-A simplified example of training a neural network and then using it based on [Candle Framework](https://github.com/huggingface/candle) from [Hugging Face](https://huggingface.co/).
-
+A simplified example in Rust of training a neural network and then using it based on the [Candle Framework](https://github.com/huggingface/candle) by [Hugging Face](https://huggingface.co/).
 ## How its works
 
 This program implements a neural network to predict the winner of the second round of elections based on the results of the first round.
