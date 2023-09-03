@@ -140,8 +140,6 @@ pub fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
-}
-
 ```
 
 ## How to run
