@@ -1,26 +1,6 @@
-# candle-simplified-example
-A simplified example of training a neural network and then using it based on [Candle Framework](https://github.com/huggingface/candle) from [Hugging Face](https://huggingface.co/).
+use candle_core::{DType, Result, Tensor, D, Device};
+use candle_nn::{loss, ops, Linear, Module, VarBuilder, VarMap};
 
-## How its works
-
-This program implements a neural network to predict the winner of the second round of elections based on the results of the first round.
-
-Basic moments:
-
-1. A multilayer perceptron with two hidden layers is used. The first hidden layer has 4 neurons, the second has 2 neurons.
-2. The input is a vector of 2 numbers - the percentage of votes for the first and second candidates in the first stage.
-3. The output is the number 0 or 1, where 1 means that the first candidate will win in the second stage, 0 means that he will lose.
-4. For training, samples with real data on the results of the first and second stages of different elections are used.
-5. The model is trained by backpropagation using gradient descent and the cross-entropy loss function.
-6. Model parameters (weights of neurons) are initialized randomly, then optimized during training.
-7. After training, the model is tested on a deferred sample to evaluate the accuracy.
-8. If the accuracy on the test set is below 100%, the model is considered underfit and the learning process is repeated. 
-
-Thus, this neural network learns to find hidden relationships between the results of the first and second rounds of voting in order to make predictions for new data.
-
-## What does the code look like
-
-```rust
 const VOTE_DIM: usize = 2;
 const RESULTS: usize = 1;
 const EPOCHS: usize = 20;
@@ -141,25 +121,44 @@ pub fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+
+fn train(m: Dataset, dev: &Device) -> anyhow::Result<MultiLevelPerceptron> {
+    let train_results = m.train_results.to_device(dev)?;
+    let train_votes = m.train_votes.to_device(dev)?;
+    let varmap = VarMap::new();
+    let vs = VarBuilder::from_varmap(&varmap, DType::F32, dev);
+    let model = MultiLevelPerceptron::new(vs.clone())?;
+    let sgd = candle_nn::SGD::new(varmap.all_vars(), LEARNING_RATE);
+    let test_votes = m.test_votes.to_device(dev)?;
+    let test_results = m.test_results.to_device(dev)?;
+    let mut final_accuracy: f32 = 0.0;
+    for epoch in 1..EPOCHS+1 {
+        let logits = model.forward(&train_votes)?;
+        let log_sm = ops::log_softmax(&logits, D::Minus1)?;
+        let loss = loss::nll(&log_sm, &train_results)?;
+        sgd.backward_step(&loss)?;
+
+        let test_logits = model.forward(&test_votes)?;
+        let sum_ok = test_logits
+            .argmax(D::Minus1)?
+            .eq(&test_results)?
+            .to_dtype(DType::F32)?
+            .sum_all()?
+            .to_scalar::<f32>()?;
+        let test_accuracy = sum_ok / test_results.dims1()? as f32;
+        final_accuracy = 100. * test_accuracy;
+        println!("Epoch: {epoch:3} Train loss: {:8.5} Test accuracy: {:5.2}%",
+                 loss.to_scalar::<f32>()?,
+                 final_accuracy
+        );
+        if final_accuracy == 100.0 {
+            break;
+        }
+    }
+    if final_accuracy < 100.0 {
+        Err(anyhow::Error::msg("The model is not trained well enough."))
+    } else {
+        Ok(model)
+    }
 }
-
-```
-
-## How to run
-
-cargo run
-
-## Example output
-
-```
-
-Trying to train neural network.
-Epoch:   1 Train loss:  4.42555 Test accuracy:  0.00%
-Epoch:   2 Train loss:  0.84677 Test accuracy: 33.33%
-Epoch:   3 Train loss:  2.54335 Test accuracy: 33.33%
-Epoch:   4 Train loss:  0.37806 Test accuracy: 33.33%
-Epoch:   5 Train loss:  0.36647 Test accuracy: 100.00%
-real_life_votes: [13, 22]
-neural_network_prediction_result: 0.0
-
-```

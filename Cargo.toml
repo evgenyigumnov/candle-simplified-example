@@ -1,0 +1,15 @@
+[package]
+name = "candle_simplified_example"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+candle-nn = "0.2.0"
+candle-core = "0.2.0"
+candle-datasets = "0.2.0"
+anyhow = "1.0.75"
+
+
+[features]
+cuda = ["candle-core/cuda", "candle-nn/cuda"]
