@@ -43,8 +43,16 @@ impl MultiLevelPerceptron {
 pub fn main() -> anyhow::Result<()> {
     let dev = Device::cuda_if_available(0)?;
 
-    let train_votes_vec: Vec<u32> =
-        vec![15, 10, 10, 15, 5, 12, 30, 20, 16, 12, 13, 25, 6, 14, 31, 21];
+    let train_votes_vec: Vec<u32> = vec![
+        15, 10,
+        10, 15,
+        5, 12,
+        30, 20,
+        16, 12,
+        13, 25,
+        6, 14,
+        31, 21,
+    ];
     let train_votes_tensor = Tensor::from_vec(
         train_votes_vec.clone(),
         (train_votes_vec.len() / VOTE_DIM, VOTE_DIM),
@@ -52,11 +60,24 @@ pub fn main() -> anyhow::Result<()> {
     )?
     .to_dtype(DType::F32)?;
 
-    let train_results_vec: Vec<u32> = vec![1, 0, 0, 1, 1, 0, 0, 1];
+    let train_results_vec: Vec<u32> = vec![
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        1,
+    ];
     let train_results_tensor =
         Tensor::from_vec(train_results_vec, train_votes_vec.len() / VOTE_DIM, &dev)?;
 
-    let test_votes_vec: Vec<u32> = vec![13, 9, 8, 14, 3, 10];
+    let test_votes_vec: Vec<u32> = vec![
+        13, 9,
+        8, 14,
+        3, 10,
+    ];
     let test_votes_tensor = Tensor::from_vec(
         test_votes_vec.clone(),
         (test_votes_vec.len() / VOTE_DIM, VOTE_DIM),
@@ -64,7 +85,11 @@ pub fn main() -> anyhow::Result<()> {
     )?
     .to_dtype(DType::F32)?;
 
-    let test_results_vec: Vec<u32> = vec![1, 0, 0];
+    let test_results_vec: Vec<u32> = vec![
+        1,
+        0,
+        0,
+    ];
     let test_results_tensor =
         Tensor::from_vec(test_results_vec.clone(), test_results_vec.len(), &dev)?;
 
